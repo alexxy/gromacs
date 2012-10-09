@@ -392,6 +392,10 @@ GMX_LIBGMXANA_EXPORT
 int
 gmx_sans(int argc, char *argv[]);
 
+GMX_LIBGMXANA_EXPORT
+int
+gmx_hpgc(int argc, char *argv[]);
+
 #ifdef __cplusplus
 }
 #endif
