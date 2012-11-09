@@ -55,10 +55,7 @@
 #include "matio.h"
 #include "gmx_ana.h"
 #include "nsfactor.h"
-
-#ifdef GMX_OPENMP
-#include <omp.h>
-#endif
+#include "gmx_omp.h"
 
 #ifndef PATH_MAX
 #if (defined WIN32 || defined _WIN32 || defined WIN64 || defined _WIN64)
@@ -152,6 +149,7 @@ int gmx_nse(int argc,char *argv[])
   atom_id    *index=NULL;
   int        isize;
   int         i,j,k;
+  t_filenm    *fnmdup=NULL;
   char        *sqtf_base=NULL, *sqtf=NULL, hdr[40];
   char        *stqf_base=NULL, *stqf=NULL;
   char        *grtf_base=NULL, *grtf=NULL;
@@ -171,9 +169,8 @@ int gmx_nse(int argc,char *argv[])
       { efXVG, "-stq",       "stq",   ffOPTWR }
   };
 
-#ifdef GMX_OPENMP
-  nthreads = omp_get_max_threads();
-#endif
+
+  nthreads = gmx_omp_get_max_threads();
 
   CopyRight(stderr,argv[0]);
   parse_common_args(&argc,argv,PCA_CAN_TIME | PCA_TIME_UNIT | PCA_BE_NICE,
@@ -183,9 +180,7 @@ int gmx_nse(int argc,char *argv[])
   check_binwidth(binwidth);
   check_mcover(mcover);
 
-#ifdef GMX_OPENMP
-  omp_set_num_threads(nthreads);
-#endif
+  gmx_omp_set_num_threads(nthreads);
 
   /* Now try to parse opts for modes */
   switch(emethod[0][0]) {
@@ -209,8 +204,18 @@ int gmx_nse(int argc,char *argv[])
       break;
   }
 
-  if (!bDEBYE && !bFFT)
-      gmx_fatal(FARGS,"Unknown method. Set pr or fft!\n");
+  if (bDEBYE) {
+      if (bMC) {
+          fprintf(stderr,"Using Monte Carlo Debye method to calculate spectrum\n");
+      } else {
+          fprintf(stderr,"Using direct Debye method to calculate spectrum\n");
+      }
+  } else if (bFFT) {
+      gmx_fatal(FARGS,"FFT method not implemented!");
+  } else {
+      gmx_fatal(FARGS,"Unknown combination for mode and method!");
+  }
+
   /* Try to read files */
   fnDAT = ftp2fn(efDAT,NFILE,fnm);
   fnTPX = ftp2fn(efTPX,NFILE,fnm);
@@ -261,18 +266,6 @@ int gmx_nse(int argc,char *argv[])
   /* Prepare reference frame */
   if (bPBC) {
       gpbc = gmx_rmpbc_init(&top->idef,ePBC,top->atoms.nr,box);
-  }
-
-  if (bDEBYE) {
-      if (bMC) {
-          fprintf(stderr,"Using Monte Carlo Debye method to calculate spectrum\n");
-      } else {
-          fprintf(stderr,"Using direct Debye method to calculate spectrum\n");
-      }
-  } else if (bFFT) {
-      gmx_fatal(FARGS,"Not implented!");
-  } else {
-      gmx_fatal(FARGS,"Whats this!");
   }
 
   natoms=read_first_x(oenv,&status,fnTRX,&t,&xf,box);
