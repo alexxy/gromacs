@@ -57,16 +57,6 @@
 #include "nsfactor.h"
 #include "gmx_omp.h"
 
-#ifndef PATH_MAX
-#if (defined WIN32 || defined _WIN32 || defined WIN64 || defined _WIN64)
-#ifdef MAX_PATH
-#define PATH_MAX MAX_PATH
-#else
-#define PATH_MAX 260
-#endif
-#endif
-#endif
-
 int gmx_nse(int argc,char *argv[])
 {
     const char *desc[] = {
