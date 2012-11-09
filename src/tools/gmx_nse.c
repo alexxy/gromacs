@@ -149,11 +149,9 @@ int gmx_nse(int argc,char *argv[])
   atom_id    *index=NULL;
   int        isize;
   int         i,j,k;
+  char       *hdr=NULL;
+  char       *suffix=NULL;
   t_filenm    *fnmdup=NULL;
-  char        *sqtf_base=NULL, *sqtf=NULL, hdr[40];
-  char        *stqf_base=NULL, *stqf=NULL;
-  char        *grtf_base=NULL, *grtf=NULL;
-  const char  *sqtf_ext=NULL, *stqf_ext=NULL, *grtf_ext=NULL;
   gmx_radial_distribution_histogram_t   *grc=NULL;
   output_env_t oenv;
 
@@ -180,6 +178,7 @@ int gmx_nse(int argc,char *argv[])
   check_binwidth(binwidth);
   check_mcover(mcover);
 
+  /* setting number of omp threads globaly */
   gmx_omp_set_num_threads(nthreads);
 
   /* Now try to parse opts for modes */
@@ -223,31 +222,6 @@ int gmx_nse(int argc,char *argv[])
 
   gnsf = gmx_neutronstructurefactors_init(fnDAT);
   fprintf(stderr,"Read %d atom names from %s with neutron scattering parameters\n\n",gnsf->nratoms,fnDAT);
-
-  /* prepare filenames for sqt output */
-  sqtf_ext = strrchr(opt2fn_null("-sqt",NFILE,fnm),'.');
-  if (sqtf_ext == NULL)
-      gmx_fatal(FARGS,"Output file name '%s' does not contain a '.'",opt2fn_null("-sqt",NFILE,fnm));
-  sqtf_base = strdup(opt2fn_null("-sqt",NFILE,fnm));
-  sqtf_base[sqtf_ext - opt2fn_null("-sqt",NFILE,fnm)] = '\0';
-
-  /* prepare filenames for stq output if exist*/
-  if(opt2fn_null("-stq",NFILE,fnm)) {
-      stqf_ext = strrchr(opt2fn_null("-stq",NFILE,fnm),'.');
-      if (stqf_ext == NULL)
-          gmx_fatal(FARGS,"Output file name '%s' does not contain a '.'",opt2fn_null("-stq",NFILE,fnm));
-      stqf_base = strdup(opt2fn_null("-stq",NFILE,fnm));
-      stqf_base[stqf_ext - opt2fn_null("-stq",NFILE,fnm)] = '\0';
-  }
-
-  /* prepare filenames for grt output if exist*/
-  if(opt2fn_null("-grt",NFILE,fnm)) {
-      grtf_ext = strrchr(opt2fn_null("-grt",NFILE,fnm),'.');
-      if (grtf_ext == NULL)
-          gmx_fatal(FARGS,"Output file name '%s' does not contain a '.'",opt2fn_null("-grt",NFILE,fnm));
-      grtf_base = strdup(opt2fn_null("-grt",NFILE,fnm));
-      grtf_base[grtf_ext - opt2fn_null("-grt",NFILE,fnm)] = '\0';
-  }
 
   snew(top,1);
   snew(gnse,1);
@@ -337,26 +311,40 @@ int gmx_nse(int argc,char *argv[])
       normalize_probability(gnse->gr[i]->grn,gnse->gr[i]->gr);
       gnse->sq[i] = convert_histogram_to_intensity_curve(gnse->gr[i],start_q,end_q,q_step);
       if(opt2fn_null("-stq",NFILE,fnm)) {
-          snew(stqf,PATH_MAX);
-          sprintf(stqf,"%s_%010.2f%s",stqf_base,gnse->dt[i],stqf_ext);
+          snew(hdr,25);
+          snew(suffix,GMX_PATH_MAX);
+          /* prepare header */
           sprintf(hdr,"S(q,dt), dt = %10.2f",gnse->dt[i]);
-          fp = xvgropen(stqf,hdr,"q, nm^-1","S(q,t) arb.u.",oenv);
+          /* prepare output filename */
+          fnmdup = dup_tfn(NFILE,fnm);
+          sprintf(suffix,"-t%010.2f",gnse->dt[i]);
+          add_suffix_to_output_names(fnmdup,NFILE,suffix);
+          fp = xvgropen(opt2fn_null("-stq",NFILE,fnmdup),hdr,"q, nm^-1","S(q,t) arb.u.",oenv);
           for(j=0;j<gnse->sq[i]->qn;j++) {
               fprintf(fp,"%10.6lf%10.6lf\n",gnse->sq[i]->q[j],gnse->sq[i]->s[j]);
           }
+          done_filenms(NFILE,fnmdup);
           fclose(fp);
-          sfree(stqf);
+          sfree(hdr);
+          sfree(fnmdup);
       }
       if(opt2fn_null("-grt",NFILE,fnm)) {
-          snew(grtf,PATH_MAX);
-          sprintf(grtf,"%s_%010.2f%s",grtf_base,gnse->dt[i],grtf_ext);
+          snew(hdr,25);
+          snew(suffix,GMX_PATH_MAX);
+          /* prepare header */
           sprintf(hdr,"G(r,dt), dt = %10.2f",gnse->dt[i]);
-          fp = xvgropen(grtf,hdr,"r, nm","G(r,dt)",oenv);
+          /* prepare output filename */
+          fnmdup = dup_tfn(NFILE,fnm);
+          sprintf(suffix,"-t%010.2f",gnse->dt[i]);
+          add_suffix_to_output_names(fnmdup,NFILE,suffix);
+          fp = xvgropen(opt2fn_null("-grt",NFILE,fnmdup),hdr,"r, nm","G(r,dt)",oenv);
           for(j=0;j<gnse->gr[i]->grn;j++) {
               fprintf(fp,"%10.6lf%10.6lf\n",gnse->gr[i]->r[j],gnse->gr[i]->gr[j]);
           }
+          done_filenms(NFILE,fnmdup);
           fclose(fp);
-          sfree(grtf);
+          sfree(hdr);
+          sfree(fnmdup);
       }
   }
   fprintf(stderr,"\n");
@@ -374,15 +362,22 @@ int gmx_nse(int argc,char *argv[])
 
   /* actualy print data */
   for(i=0;i<gnse->sq[0]->qn;i++) {
-      snew(sqtf,PATH_MAX);
-      sprintf(sqtf,"%s_q_%2.2lf%s",sqtf_base,gnse->sqt[i]->q,sqtf_ext);
+      snew(hdr,25);
+      snew(suffix,GMX_PATH_MAX);
+      /* prepare header */
       sprintf(hdr,"S(q,dt) , q = %2.2lf",gnse->sqt[i]->q);
-      fp = xvgropen(sqtf,hdr,"dt","S(q,dt)",oenv);
+      /* prepare output filename */
+      fnmdup = dup_tfn(NFILE,fnm);
+      sprintf(suffix,"-q%2.2lf",gnse->sqt[i]->q);
+      add_suffix_to_output_names(fnmdup,NFILE,suffix);
+      fp = xvgropen(opt2fn("-sqt",NFILE,fnmdup),hdr,"dt","S(q,dt)",oenv);
       for(j=0;j<gnse->nrframes;j++) {
           fprintf(fp,"%10.6lf%10.6lf\n",gnse->dt[j],gnse->sqt[i]->s[j]);
       }
+      done_filenms(NFILE,fnmdup);
       fclose(fp);
-      sfree(sqtf);
+      sfree(hdr);
+      sfree(fnmdup);
   }
 
   please_cite(stdout,"Garmay2012");
