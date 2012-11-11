@@ -257,14 +257,17 @@ int gmx_nse(int argc,char *argv[])
           srenew(gnse->gr,nralloc);
           srenew(gnse->sq,nralloc);
           srenew(gnse->x,nralloc);
+          srenew(gnse->box,nralloc);
       }
       snew(gnse->x[nframes],isize);
       for(i=0;i<isize;i++) {
           copy_rvec(xf[index[i]],gnse->x[nframes][i]);
+          copy_mat(box,gnse->box[i]);
       }
       nframes++;
   } while (read_next_x(oenv,status,&t,natoms,xf,box));
   close_trj(status);
+
   /* populate gnse->t structure with md times */
   srenew(gnse->t,gnse->nrframes);
   for(i=1;i<gnse->nrframes;i++) {
@@ -281,14 +284,29 @@ int gmx_nse(int argc,char *argv[])
 
   for(i=0;i<gnse->nrframes;i++) {
       for(j=0;j+i<gnse->nrframes;j++) {
-          snew(grc,1);
-          snew(gnse->gr[i],1);
-          grc = calc_radial_distribution_histogram(gnse->sans,gnse->x[j],gnse->x[j+i],box,index,isize,binwidth,bMC,bNORM,bNSE,mcover,seed);
-          /* now we need to summ up gr's */
+          if (grc == NULL) {
+              snew(grc,1);
+          }
+          if (gnse->gr[i] == NULL) {
+              snew(gnse->gr[i],1);
+          }
+          grc = calc_radial_distribution_histogram(gnse->sans,gnse->x[j],gnse->x[j+i],gnse->box[j],gnse->box[j+i],index,isize,binwidth,bMC,bNORM,bNSE,mcover,seed);
+          /* Copy common things */
           gnse->gr[i]->binwidth = grc->binwidth;
-          gnse->gr[i]->grn = grc->grn;
-          snew(gnse->gr[i]->gr,grc->grn);
-          snew(gnse->gr[i]->r,grc->grn);
+          /* also we should be make sure that there will be no buffer overruns */
+          if (gnse->gr[i] == NULL) {
+              snew(gnse->gr[i]->gr,grc->grn);
+              snew(gnse->gr[i]->r,grc->grn);
+              gnse->gr[i]->grn = grc->grn;
+          } else {
+              if (gnse->gr[i]->grn < grc->grn) {
+                  gnse->gr[i]->grn = grc->grn;
+                  srenew(gnse->gr[i]->gr,grc->grn);
+                  srenew(gnse->gr[i]->r,grc->grn);
+              }
+          }
+
+          /* now we need to summ up gr's */
           for(k=0;k<grc->grn;k++) {
               gnse->gr[i]->gr[k] += grc->gr[k];
               gnse->gr[i]->r[k] = grc->r[k];

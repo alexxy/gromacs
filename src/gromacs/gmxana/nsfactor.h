@@ -86,6 +86,7 @@ typedef struct gmx_nse_t {
     rvec       **x; /* md coordinates */
     real        *t; /*  md time */
     real        *dt; /* time for correlation */
+    matrix      *box; /* box for current coordinates */
     int        nrframes;
 } gmx_nse_t;
 
@@ -101,7 +102,7 @@ gmx_sans_t *gmx_sans_init(t_topology *top, gmx_neutron_atomic_structurefactors_t
 
 gmx_radial_distribution_histogram_t *calc_radial_distribution_histogram  (gmx_sans_t *gsans,
                             rvec *x, rvec *xf,
-                            matrix box,
+                            matrix box, matrix boxf,
                             atom_id *index,
                             int isize,
                             double binwidth,

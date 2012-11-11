@@ -255,7 +255,7 @@ int gmx_sans(int argc, char *argv[])
           snew(pr,1);
       }
       /*  realy calc p(r) */
-      prframecurrent = calc_radial_distribution_histogram(gsans,x,NULL,box,index,isize,binwidth,bMC,bNORM,bNSE,mcover,seed);
+      prframecurrent = calc_radial_distribution_histogram(gsans,x,NULL,box,NULL,index,isize,binwidth,bMC,bNORM,bNSE,mcover,seed);
       /* copy prframecurrent -> pr and summ up pr->gr[i] */
       /* allocate and/or resize memory for pr->gr[i] and pr->r[i] */
       if (pr->gr == NULL) {
