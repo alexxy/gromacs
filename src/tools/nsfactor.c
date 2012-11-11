@@ -89,8 +89,19 @@ void normalize_probability(int n, double *a)
     }
 }
 
-gmx_neutron_atomic_structurefactors_t *gmx_neutronstructurefactors_init(const char *datfn)
-{
+real max_dx(matrix box) {
+    rvec dist;
+    /*
+    * create max dist rvec
+    * dist = box[xx] + box[yy] + box[zz]
+    */
+    rvec_add(box[XX],box[YY],dist);
+    rvec_add(box[ZZ],dist,dist);
+
+    return norm(dist);
+}
+
+gmx_neutron_atomic_structurefactors_t *gmx_neutronstructurefactors_init(const char *datfn) {
     /* read nsfactor.dat */
     FILE    *fp;
     char     line[STRLEN];
@@ -191,6 +202,7 @@ gmx_radial_distribution_histogram_t *calc_radial_distribution_histogram (
                             rvec *x,
                             rvec *xf,
                             matrix box,
+                            matrix boxf,
                             atom_id *index,
                             int isize,
                             double binwidth,
@@ -217,14 +229,11 @@ gmx_radial_distribution_histogram_t *calc_radial_distribution_histogram (
     /* set some fields */
     pr->binwidth = binwidth;
 
-    /*
-     * create max dist rvec
-     * dist = box[xx] + box[yy] + box[zz]
-     */
-    rvec_add(box[XX], box[YY], dist);
-    rvec_add(box[ZZ], dist, dist);
-
-    rmax = norm(dist);
+    if (max_dx(box) - max_dx(boxf) > 0 ) {
+        rmax = max_dx(box);
+    } else {
+        rmax = max_dx(boxf);
+    }
 
     pr->grn = (int)floor(rmax/pr->binwidth)+1;
     rmax    = pr->grn*pr->binwidth;
