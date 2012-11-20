@@ -237,41 +237,48 @@ int gmx_nse(int argc,char *argv[])
       fprintf(stderr,"\nWARNING: number of atoms in tpx (%d) and trajectory (%d) do not match\n",natoms,atoms->nr);
   /* realy do calc */
   nframes=0;
-  snew(gnse->x,nralloc);
-  snew(gnse->t,nralloc);
-  gnse->t[0]=t;
-  /* now we need to copy only selected group to gnse->x[0] */
-  snew(gnse->x[0],isize);
+  /* allocate structures for gnse->x,t,box for first frame */
+  snew(gnse->x,nframes+1);
+  snew(gnse->t,nframes+1);
+  snew(gnse->box,nframes+1);
+  /* copy data for x, t , box */
+  copy_mat(box,gnse->box[nframes]);
+  gnse->t[nframes] = t;
+  snew(gnse->x[nframes],isize);
   for(i=0;i<isize;i++) {
-      copy_rvec(xf[index[i]],gnse->x[0][i]);
+      copy_rvec(xf[index[i]],gnse->x[nframes][i]);
   }
-
   /* Read whole trajectory into memroy and allocate gnse structure */
   do {
       if (bPBC) {
           gmx_rmpbc(gpbc,atoms->nr,box,xf);
       }
-      gnse->nrframes = nframes+1;
-      if(nralloc<(nframes+1)) {
-          nralloc++;
-          srenew(gnse->gr,nralloc);
-          srenew(gnse->sq,nralloc);
-          srenew(gnse->x,nralloc);
-          srenew(gnse->box,nralloc);
-      }
+      /* resize arrays */
+      srenew(gnse->x,nframes+1);
+      srenew(gnse->t,nframes+1);
+      srenew(gnse->box,nframes+1);
+
+      copy_mat(box,gnse->box[nframes]);
+      gnse->t[nframes] = t;
       snew(gnse->x[nframes],isize);
       for(i=0;i<isize;i++) {
           copy_rvec(xf[index[i]],gnse->x[nframes][i]);
-          copy_mat(box,gnse->box[i]);
       }
       nframes++;
   } while (read_next_x(oenv,status,&t,natoms,xf,box));
   close_trj(status);
 
-  /* populate gnse->t structure with md times */
-  srenew(gnse->t,gnse->nrframes);
-  for(i=1;i<gnse->nrframes;i++) {
-      gnse->t[i]= gnse->t[0] + i * (t - gnse->t[0])/(gnse->nrframes - 1);
+  gnse->nrframes = nframes;
+
+  for(i=0;i<gnse->nrframes;i++) {
+      fprintf(stderr,"Times for frame %d = %f\n", i , gnse->t[i]);
+  }
+
+  /* allocate gnse->sq,gr structures */
+  snew(gnse->sq,gnse->nrframes);
+  snew(gnse->gr,gnse->nrframes);
+  for(i=0;i<gnse->nrframes;i++) {
+      snew(gnse->gr[i],1);
   }
 
   /*
@@ -287,9 +294,6 @@ int gmx_nse(int argc,char *argv[])
           if (grc == NULL) {
               snew(grc,1);
           }
-          if (gnse->gr[i] == NULL) {
-              snew(gnse->gr[i],1);
-          }
           grc = calc_radial_distribution_histogram(gnse->sans,gnse->x[j],gnse->x[j+i],gnse->box[j],gnse->box[j+i],index,isize,binwidth,bMC,bNORM,bNSE,mcover,seed);
           /* Copy common things */
           gnse->gr[i]->binwidth = grc->binwidth;
@@ -299,7 +303,7 @@ int gmx_nse(int argc,char *argv[])
               snew(gnse->gr[i]->r,grc->grn);
               gnse->gr[i]->grn = grc->grn;
           } else {
-              if (gnse->gr[i]->grn < grc->grn) {
+              if (grc->grn > gnse->gr[i]->grn ) {
                   gnse->gr[i]->grn = grc->grn;
                   srenew(gnse->gr[i]->gr,grc->grn);
                   srenew(gnse->gr[i]->r,grc->grn);
