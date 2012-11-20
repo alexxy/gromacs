@@ -270,10 +270,6 @@ int gmx_nse(int argc,char *argv[])
 
   gnse->nrframes = nframes;
 
-  for(i=0;i<gnse->nrframes;i++) {
-      fprintf(stderr,"Times for frame %d = %f\n", i , gnse->t[i]);
-  }
-
   /* allocate gnse->sq,gr structures */
   snew(gnse->sq,gnse->nrframes);
   snew(gnse->gr,gnse->nrframes);
