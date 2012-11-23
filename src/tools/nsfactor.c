@@ -207,7 +207,6 @@ gmx_radial_distribution_histogram_t *calc_radial_distribution_histogram (
                             int isize,
                             double binwidth,
                             gmx_bool bMC,
-                            gmx_bool bNORM,
                             gmx_bool bNSE,
                             real mcover,
                             unsigned int seed) {
@@ -378,17 +377,9 @@ gmx_radial_distribution_histogram_t *calc_radial_distribution_histogram (
 #endif
     }
 
-    /* normalize if needed */
-    if (bNORM)
-    {
-        normalize_probability(pr->grn, pr->gr);
-    }
-
-    snew(pr->r, pr->grn);
-    for (i = 0; i < pr->grn; i++)
-    {
-        pr->r[i] = (pr->binwidth*i+pr->binwidth*0.5);
-    }
+    snew(pr->r,pr->grn);
+    for(i=0;i<pr->grn;i++)
+        pr->r[i]=(pr->binwidth*i+pr->binwidth*0.5);
 
     return (gmx_radial_distribution_histogram_t *) pr;
 }
