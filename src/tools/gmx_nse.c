@@ -294,7 +294,7 @@ int gmx_nse(int argc,char *argv[])
           /* Copy common things */
           gnse->gr[i]->binwidth = grc->binwidth;
           /* also we should be make sure that there will be no buffer overruns */
-          if (gnse->gr[i] == NULL) {
+          if (gnse->gr[i]->gr == NULL) {
               snew(gnse->gr[i]->gr,grc->grn);
               snew(gnse->gr[i]->r,grc->grn);
               gnse->gr[i]->grn = grc->grn;
