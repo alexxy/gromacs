@@ -60,7 +60,7 @@
 int gmx_nse(int argc,char *argv[])
 {
     const char *desc[] = {
-    "This is simple tool to compute Neutron Spin Echo (NSE) spectra using Debye formula",
+        "This is simple tool to compute Neutron Spin Echo (NSE) spectra",
         "Besides the trajectory, the topology is required to assign elements to each atom.",
         "[PAR]",
         "[TT]-sqt[TT] Computes NSE intensity curve for each q value",
@@ -75,6 +75,7 @@ int gmx_nse(int argc,char *argv[])
     };
     static gmx_bool bPBC=TRUE;
     static gmx_bool bNSE=TRUE;
+    static gmx_bool bNORMALIZE=TRUE;
     static real binwidth=0.2,grid=0.05; /* bins shouldnt be smaller then bond (~0.1nm) length */
     static real start_q=0.01, end_q=2.0, q_step=0.01;
     static real mcover=-1;
@@ -100,6 +101,8 @@ int gmx_nse(int argc,char *argv[])
           "[HIDDEN]Method for sans spectra calculation" },
         { "-pbc", FALSE, etBOOL, {&bPBC},
           "Use periodic boundary conditions for computing distances" },
+        { "-normalize", FALSE, etBOOL, {&bNORMALIZE},
+          "Normalize I(q,t) output to I(q,t=0)"},
         { "-grid", FALSE, etREAL, {&grid},
           "[HIDDEN]Grid spacing (in nm) for FFTs" },
         {"-startq", FALSE, etREAL, {&start_q},
@@ -379,7 +382,12 @@ int gmx_nse(int argc,char *argv[])
       add_suffix_to_output_names(fnmdup,NFILE,suffix);
       fp = xvgropen(opt2fn("-sqt",NFILE,fnmdup),hdr,"dt","S(q,dt)",oenv);
       for(j=0;j<gnse->nrframes;j++) {
-          fprintf(fp,"%10.6lf%10.6lf\n",gnse->dt[j],gnse->sqt[i]->s[j]);
+          if (bNORMALIZE) {
+              fprintf(fp,"%10.6lf%10.6lf\n",gnse->dt[j],gnse->sqt[i]->s[j]/gnse->sqt[i]->s[0]);
+          } else {
+              fprintf(fp,"%10.6lf%10.6lf\n",gnse->dt[j],gnse->sqt[i]->s[j]);
+          }
+
       }
       done_filenms(NFILE,fnmdup);
       fclose(fp);
@@ -387,7 +395,7 @@ int gmx_nse(int argc,char *argv[])
       sfree(fnmdup);
   }
 
-  please_cite(stdout,"Garmay2012");
+  // please_cite("Shvetsov2012"); /* to be published */
 
   thanx(stderr);
 
