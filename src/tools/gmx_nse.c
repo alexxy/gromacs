@@ -75,7 +75,6 @@ int gmx_nse(int argc,char *argv[])
     };
     static gmx_bool bPBC=TRUE;
     static gmx_bool bNSE=TRUE;
-    static gmx_bool bNORM=FALSE;
     static real binwidth=0.2,grid=0.05; /* bins shouldnt be smaller then bond (~0.1nm) length */
     static real start_q=0.01, end_q=2.0, q_step=0.01;
     static real mcover=-1;
@@ -290,7 +289,7 @@ int gmx_nse(int argc,char *argv[])
           if (grc == NULL) {
               snew(grc,1);
           }
-          grc = calc_radial_distribution_histogram(gnse->sans,gnse->x[j],gnse->x[j+i],gnse->box[j],gnse->box[j+i],index,isize,binwidth,bMC,bNORM,bNSE,mcover,seed);
+          grc = calc_radial_distribution_histogram(gnse->sans,gnse->x[j],gnse->x[j+i],gnse->box[j],gnse->box[j+i],index,isize,binwidth,bMC,bNSE,mcover,seed);
           /* Copy common things */
           gnse->gr[i]->binwidth = grc->binwidth;
           /* also we should be make sure that there will be no buffer overruns */
