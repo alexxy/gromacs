@@ -62,7 +62,7 @@
 
 int gmx_nse(int argc, char *argv[])
 {
-    const char          *desc[] = {
+    const char                            *desc[] = {
         "This is simple tool to compute Neutron Spin Echo (NSE) spectra",
         "Besides the trajectory, the topology is required to assign elements to each atom.",
         "[PAR]",
@@ -76,20 +76,20 @@ int gmx_nse(int argc, char *argv[])
         "[PAR]",
         "Note: This tools produces large number of sqt files (one file per needed q value)!"
     };
-    static gmx_bool      bPBC       = TRUE;
-    static gmx_bool      bNSE       = TRUE;
-    static gmx_bool      bNORMALIZE = TRUE;
-    static real          binwidth   = 0.2, grid = 0.05; /* bins shouldnt be smaller then bond (~0.1nm) length */
-    static real          start_q    = 0.01, end_q = 2.0, q_step = 0.01;
-    static real          mcover     = -1;
-    static unsigned int  seed       = 0;
-    static int           nthreads   = -1;
+    static gmx_bool                        bPBC       = TRUE;
+    static gmx_bool                        bNSE       = TRUE;
+    static gmx_bool                        bNORMALIZE = TRUE;
+    static real                            binwidth   = 0.2, grid = 0.05; /* bins shouldnt be smaller then bond (~0.1nm) length */
+    static real                            start_q    = 0.01, end_q = 2.0, q_step = 0.01;
+    static real                            mcover     = -1;
+    static unsigned int                    seed       = 0;
+    static int                             nthreads   = -1;
 
-    static const char   *emode[]   = { NULL, "direct", "mc", NULL };
-    static const char   *emethod[] = { NULL, "debye", "fft", NULL };
+    static const char                     *emode[]   = { NULL, "direct", "mc", NULL };
+    static const char                     *emethod[] = { NULL, "debye", "fft", NULL };
 
-    gmx_neutron_atomic_structurefactors_t    *gnsf;
-    gmx_nse_t                                *gnse;
+    gmx_neutron_atomic_structurefactors_t *gnsf;
+    gmx_nse_t                             *gnse;
 
 #define NPA asize(pa)
 
@@ -152,7 +152,7 @@ int gmx_nse(int argc, char *argv[])
 
 #define NFILE asize(fnm)
 
-    t_filenm   fnm[] = {
+    t_filenm fnm[] = {
         { efTPX,  "-s",         NULL,   ffREAD },
         { efTRX,  "-f",         NULL,   ffREAD },
         { efNDX,  NULL,         NULL,   ffOPTRD },
@@ -343,6 +343,9 @@ int gmx_nse(int argc, char *argv[])
                 gnse->gr[i]->gr[k] += grc->gr[k];
                 gnse->gr[i]->r[k]   = grc->r[k];
             }
+            /* we can free grc */
+            sfree(grc->gr);
+            sfree(grc->r);
             sfree(grc);
             pairs--;
             gnse->dt[i] = gnse->t[j+i]-gnse->t[j];
@@ -390,9 +393,30 @@ int gmx_nse(int argc, char *argv[])
             sfree(hdr);
             sfree(fnmdup);
         }
+        /* Now we can free gnse->gr[i] */
+        sfree(gnse->gr[i]->gr);
+        sfree(gnse->gr[i]->r);
+        sfree(gnse->gr[i]);
+
     }
+    /* now we can free gnse->x gnse->box */
+    for (i = 0; i < gnse->nrframes; i++)
+    {
+        sfree(gnse->x[i]);
+    }
+    sfree(gnse->box);
+    sfree(gnse->t);
+    /* Also we can clean index and top */
+    sfree(index);
+    sfree(grpname);
+    done_sans(gnse->sans);
+    done_nsf(gnsf);
+    sfree(top); // done_top already done via done_sans
+
+
     fprintf(stderr, "\n");
-    snew(gnse->sqt, gnse->sq[0]->qn);
+    gnse->sqtn = gnse->sq[0]->qn;
+    snew(gnse->sqt, gnse->sqtn);
 
     /* now we will gather s(q(t)) from s(q) spectrums */
     for (i = 0; i < gnse->sq[0]->qn; i++)
@@ -405,9 +429,16 @@ int gmx_nse(int argc, char *argv[])
             gnse->sqt[i]->s[j] = gnse->sq[j]->s[i];
         }
     }
+    /* Now we can free gnse->sq */
+    for (i = 0; i < gnse->nrframes; i++)
+    {
+        sfree(gnse->sq[i]->q);
+        sfree(gnse->sq[i]->s);
+        sfree(gnse->sq[i]);
+    }
 
     /* actualy print data */
-    for (i = 0; i < gnse->sq[0]->qn; i++)
+    for (i = 0; i < gnse->sqtn; i++)
     {
         snew(hdr, 25);
         snew(suffix, GMX_PATH_MAX);
@@ -435,6 +466,16 @@ int gmx_nse(int argc, char *argv[])
         sfree(hdr);
         sfree(fnmdup);
     }
+
+    /* Now we need to clean up rest structures */
+    sfree(gnse->dt);
+    for (i = 0; i < gnse->nrframes; i++)
+    {
+        sfree(gnse->sqt[i]->s);
+        sfree(gnse->sqt[i]);
+    }
+    sfree(gnse->sqt);
+    sfree(gnse);
 
     // please_cite("Shvetsov2012"); /* to be published */
 
