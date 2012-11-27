@@ -313,6 +313,9 @@ int gmx_nse(int argc,char *argv[])
               gnse->gr[i]->gr[k] += grc->gr[k];
               gnse->gr[i]->r[k] = grc->r[k];
           }
+          /* we can free grc */
+          sfree(grc->gr);
+          sfree(grc->r);
           sfree(grc);
           pairs--;
           gnse->dt[i] = gnse->t[j+i]-gnse->t[j];
@@ -356,9 +359,29 @@ int gmx_nse(int argc,char *argv[])
           sfree(hdr);
           sfree(fnmdup);
       }
+      /* Now we can free gnse->gr[i] */
+      sfree(gnse->gr[i]->gr);
+      sfree(gnse->gr[i]->r);
+      sfree(gnse->gr[i]);
+
   }
+  /* now we can free gnse->x gnse->box */
+  for(i=0;i<gnse->nrframes;i++) {
+      sfree(gnse->x[i]);
+  }
+  sfree(gnse->box);
+  sfree(gnse->t);
+  /* Also we can clean index and top */
+  sfree(index);
+  sfree(grpname);
+  done_sans(gnse->sans);
+  done_nsf(gnsf);
+  sfree(top); // done_top already done via done_sans
+
+
   fprintf(stderr,"\n");
-  snew(gnse->sqt,gnse->sq[0]->qn);
+  gnse->sqtn = gnse->sq[0]->qn;
+  snew(gnse->sqt,gnse->sqtn);
 
   /* now we will gather s(q(t)) from s(q) spectrums */
   for(i=0;i<gnse->sq[0]->qn;i++) {
@@ -369,9 +392,15 @@ int gmx_nse(int argc,char *argv[])
           gnse->sqt[i]->s[j] = gnse->sq[j]->s[i];
       }
   }
+  /* Now we can free gnse->sq */
+  for(i=0;i<gnse->nrframes;i++) {
+      sfree(gnse->sq[i]->q);
+      sfree(gnse->sq[i]->s);
+      sfree(gnse->sq[i]);
+  }
 
   /* actualy print data */
-  for(i=0;i<gnse->sq[0]->qn;i++) {
+  for(i=0;i<gnse->sqtn;i++) {
       snew(hdr,25);
       snew(suffix,GMX_PATH_MAX);
       /* prepare header */
@@ -394,6 +423,15 @@ int gmx_nse(int argc,char *argv[])
       sfree(hdr);
       sfree(fnmdup);
   }
+
+  /* Now we need to clean up rest structures */
+  sfree(gnse->dt);
+  for(i=0;i<gnse->nrframes;i++) {
+      sfree(gnse->sqt[i]->s);
+      sfree(gnse->sqt[i]);
+  }
+  sfree(gnse->sqt);
+  sfree(gnse);
 
   // please_cite("Shvetsov2012"); /* to be published */
 

@@ -156,10 +156,17 @@ gmx_neutron_atomic_structurefactors_t *gmx_neutronstructurefactors_init(const ch
     return (gmx_neutron_atomic_structurefactors_t *) gnsf;
 }
 
-gmx_sans_t *gmx_sans_init (t_topology *top, gmx_neutron_atomic_structurefactors_t *gnsf)
-{
-    gmx_sans_t    *gsans = NULL;
-    int            i, j;
+void done_nsf(gmx_neutron_atomic_structurefactors_t *gnsf) {
+    sfree(gnsf->n);
+    sfree(gnsf->p);
+    sfree(gnsf->slength);
+    sfree(gnsf->atomnm);
+    sfree(gnsf);
+}
+
+gmx_sans_t *gmx_sans_init (t_topology *top, gmx_neutron_atomic_structurefactors_t *gnsf) {
+    gmx_sans_t    *gsans=NULL;
+    int     i,j;
     /* Try to assing scattering length from nsfactor.dat */
     snew(gsans, 1);
     snew(gsans->slength, top->atoms.nr);
@@ -192,6 +199,12 @@ gmx_sans_t *gmx_sans_init (t_topology *top, gmx_neutron_atomic_structurefactors_
     }
 
     return (gmx_sans_t *) gsans;
+}
+
+void done_sans(gmx_sans_t *gsans) {
+    sfree(gsans->slength);
+    done_top(gsans->top);
+    sfree(gsans);
 }
 
 gmx_radial_distribution_histogram_t *calc_radial_distribution_histogram (

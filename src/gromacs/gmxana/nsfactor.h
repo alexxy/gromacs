@@ -88,6 +88,7 @@ typedef struct gmx_nse_t {
     real        *dt; /* time for correlation */
     matrix      *box; /* box for current coordinates */
     int        nrframes;
+    int        sqtn;
 } gmx_nse_t;
 
 void check_binwidth(real binwidth);
@@ -98,7 +99,11 @@ void normalize_probability(int n, double *a);
 
 gmx_neutron_atomic_structurefactors_t *gmx_neutronstructurefactors_init(const char *datfn);
 
+void done_nsf(gmx_neutron_atomic_structurefactors_t *gnsf);
+
 gmx_sans_t *gmx_sans_init(t_topology *top, gmx_neutron_atomic_structurefactors_t *gnsf);
+
+void done_sans(gmx_sans_t *gsans);
 
 gmx_radial_distribution_histogram_t *calc_radial_distribution_histogram  (gmx_sans_t *gsans,
                             rvec *x, rvec *xf,
