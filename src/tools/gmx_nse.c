@@ -60,16 +60,11 @@
 int gmx_nse(int argc,char *argv[])
 {
     const char *desc[] = {
-        "This is simple tool to compute Neutron Spin Echo (NSE) spectra",
+        "This is simple tool to compute Neutron Spin Echo (NSE) spectra.",
         "Besides the trajectory, the topology is required to assign elements to each atom.",
         "[PAR]",
-        "[TT]-sqt[TT] Computes NSE intensity curve for each q value",
-        "[PAR]",
-        "[TT]-startq[TT] Starting q value in nm",
-        "[PAR]",
-        "[TT]-endq[TT] Ending q value in nm",
-        "[PAR]",
-        "[TT]-qstep[TT] Stepping in q space",
+        "You need to remove jumps in trajectory before you will use this tool, so",
+        "preprocess trajectory with trjconv -pbc nojump",
         "[PAR]",
         "Note: This tools produces large number of sqt files (one file per needed q value)!"
     };
