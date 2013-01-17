@@ -54,7 +54,7 @@ add_library(gmxana
             gmx_polystat.c  gmx_potential.c gmx_rama.c      
             gmx_rdf.c       gmx_rms.c       gmx_rmsf.c      
             gmx_rotacf.c    gmx_saltbr.c    gmx_sas.c       gmx_sans.c
-            gmx_select.c    gmx_rmsdist.c   gmx_rotmat.c    g_nse.c
+            gmx_select.c    gmx_rmsdist.c   gmx_rotmat.c    gmx_nse.c
             gmx_sgangle.c   gmx_sorient.c   gmx_spol.c      gmx_tcaf.c      
             gmx_traj.c      gmx_velacc.c    gmx_helixorient.c 
             gmx_clustsize.c gmx_mdmat.c     gmx_wham.c      
@@ -82,7 +82,7 @@ set(GMX_TOOLS_PROGRAMS
     make_ndx mk_angndx trjcat trjconv trjorder g_wheel 
     xpm2ps genion g_anadock make_edi g_analyze g_anaeig
     g_angle g_bond g_bundle g_chi g_cluster g_confrms g_covar
-    g_current g_density g_densmap g_dielectric
+    g_current g_density g_densmap g_dielectric g_nse
     g_helixorient g_principal g_dipoles g_disre g_dist
     g_dyndom g_enemat g_energy g_lie g_filter g_gyrate
     g_h2order g_hbond g_helix g_mindist g_msd g_morph g_nmeig
@@ -91,7 +91,7 @@ set(GMX_TOOLS_PROGRAMS
     g_spol g_spatial g_tcaf g_traj g_tune_pme g_vanhove
     g_velacc g_clustsize g_mdmat g_wham g_sigeps g_bar
     g_membed g_pme_error g_rmsdist g_rotmat g_options
-    g_dos    g_hydorder  g_densorder g_dyecoupl g_sans g_nse
+    g_dos    g_hydorder  g_densorder g_dyecoupl g_sans
     )
 
 set(GMX_TOOLS_PROGRAMS_NOT_FOR_INSTALLATION
