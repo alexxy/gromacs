@@ -89,19 +89,21 @@ void normalize_probability(int n, double *a)
     }
 }
 
-real max_dx(matrix box) {
+real max_dx(matrix box)
+{
     rvec dist;
     /*
-    * create max dist rvec
-    * dist = box[xx] + box[yy] + box[zz]
-    */
-    rvec_add(box[XX],box[YY],dist);
-    rvec_add(box[ZZ],dist,dist);
+     * create max dist rvec
+     * dist = box[xx] + box[yy] + box[zz]
+     */
+    rvec_add(box[XX], box[YY], dist);
+    rvec_add(box[ZZ], dist, dist);
 
     return norm(dist);
 }
 
-gmx_neutron_atomic_structurefactors_t *gmx_neutronstructurefactors_init(const char *datfn) {
+gmx_neutron_atomic_structurefactors_t *gmx_neutronstructurefactors_init(const char *datfn)
+{
     /* read nsfactor.dat */
     FILE    *fp;
     char     line[STRLEN];
@@ -198,22 +200,23 @@ gmx_sans_t *gmx_sans_init (t_topology *top, gmx_neutron_atomic_structurefactors_
 }
 
 gmx_radial_distribution_histogram_t *calc_radial_distribution_histogram (
-                            gmx_sans_t *gsans,
-                            rvec *x,
-                            rvec *xf,
-                            matrix box,
-                            matrix boxf,
-                            atom_id *index,
-                            int isize,
-                            double binwidth,
-                            gmx_bool bMC,
-                            gmx_bool bNSE,
-                            real mcover,
-                            unsigned int seed) {
-    gmx_radial_distribution_histogram_t    *pr=NULL;
-    rvec            dist;
-    double          rmax;
-    int             i,j;
+        gmx_sans_t  *gsans,
+        rvec        *x,
+        rvec        *xf,
+        matrix       box,
+        matrix       boxf,
+        atom_id     *index,
+        int          isize,
+        double       binwidth,
+        gmx_bool     bMC,
+        gmx_bool     bNSE,
+        real         mcover,
+        unsigned int seed)
+{
+    gmx_radial_distribution_histogram_t    *pr = NULL;
+    rvec              dist;
+    double            rmax;
+    int               i, j;
 #ifdef GMX_OPENMP
     double          **tgr;
     int               tid;
@@ -228,9 +231,12 @@ gmx_radial_distribution_histogram_t *calc_radial_distribution_histogram (
     /* set some fields */
     pr->binwidth = binwidth;
 
-    if (max_dx(box) - max_dx(boxf) > 0 ) {
+    if (max_dx(box) - max_dx(boxf) > 0)
+    {
         rmax = max_dx(box);
-    } else {
+    }
+    else
+    {
         rmax = max_dx(boxf);
     }
 
@@ -242,17 +248,26 @@ gmx_radial_distribution_histogram_t *calc_radial_distribution_histogram (
     if (bMC)
     {
         /* Special case for setting automaticaly number of mc iterations to 1% of total number of direct iterations */
-        if (mcover==-1) {
-            if (bNSE) {
-                max=(gmx_large_int_t)floor(0.01*isize*isize);
-            } else {
-                max=(gmx_large_int_t)floor(0.5*0.01*isize*(isize-1));
+        if (mcover == -1)
+        {
+            if (bNSE)
+            {
+                max = (gmx_large_int_t)floor(0.01*isize*isize);
             }
-        } else {
-            if (bNSE) {
-                max=(gmx_large_int_t)floor(mcover*isize*isize);
-            } else {
-                max=(gmx_large_int_t)floor(0.5*mcover*isize*(isize-1));
+            else
+            {
+                max = (gmx_large_int_t)floor(0.5*0.01*isize*(isize-1));
+            }
+        }
+        else
+        {
+            if (bNSE)
+            {
+                max = (gmx_large_int_t)floor(mcover*isize*isize);
+            }
+            else
+            {
+                max = (gmx_large_int_t)floor(0.5*mcover*isize*(isize-1));
             }
         }
         rng = gmx_rng_init(seed);
@@ -270,15 +285,20 @@ gmx_radial_distribution_histogram_t *calc_radial_distribution_histogram (
             tid = gmx_omp_get_thread_num();
             /* now starting parallel threads */
             #pragma omp for
-            for(mc=0;mc<max;mc++) {
-                i=(int)floor(gmx_rng_uniform_real(trng[tid])*isize);
-                j=(int)floor(gmx_rng_uniform_real(trng[tid])*isize);
-                if (bNSE) {
+            for (mc = 0; mc < max; mc++)
+            {
+                i = (int)floor(gmx_rng_uniform_real(trng[tid])*isize);
+                j = (int)floor(gmx_rng_uniform_real(trng[tid])*isize);
+                if (bNSE)
+                {
                     /* we already copyed x[index[i]] to gnse->x[frame] */
-                    tgr[tid][(int)floor(sqrt(distance2(x[i],xf[j]))/binwidth)]+=gsans->slength[index[i]]*gsans->slength[index[j]];
-                } else {
-                    if(i!=j) {
-                        tgr[tid][(int)floor(sqrt(distance2(x[index[i]],x[index[j]]))/binwidth)]+=gsans->slength[index[i]]*gsans->slength[index[j]];
+                    tgr[tid][(int)floor(sqrt(distance2(x[i], xf[j]))/binwidth)] += gsans->slength[index[i]]*gsans->slength[index[j]];
+                }
+                else
+                {
+                    if (i != j)
+                    {
+                        tgr[tid][(int)floor(sqrt(distance2(x[index[i]], x[index[j]]))/binwidth)] += gsans->slength[index[i]]*gsans->slength[index[j]];
                     }
                 }
             }
@@ -300,15 +320,21 @@ gmx_radial_distribution_histogram_t *calc_radial_distribution_histogram (
         sfree(tgr);
         sfree(trng);
 #else
-        for(mc=0;mc<max;mc++) {
-            i=(int)floor(gmx_rng_uniform_real(rng)*isize);
-            j=(int)floor(gmx_rng_uniform_real(rng)*isize);
-            if (bNSE) {
+        for (mc = 0; mc < max; mc++)
+        {
+            i = (int)floor(gmx_rng_uniform_real(rng)*isize);
+            j = (int)floor(gmx_rng_uniform_real(rng)*isize);
+            if (bNSE)
+            {
                 /* we already copyed x[index[i]] to gnse->x[frame] */
-                pr->gr[(int)floor(sqrt(distance2(x[i],xf[j]))/binwidth)]+=gsans->slength[index[i]]*gsans->slength[index[j]];
-            } else {
-                if(i!=j)
-                    pr->gr[(int)floor(sqrt(distance2(x[index[i]],x[index[j]]))/binwidth)]+=gsans->slength[index[i]]*gsans->slength[index[j]];
+                pr->gr[(int)floor(sqrt(distance2(x[i], xf[j]))/binwidth)] += gsans->slength[index[i]]*gsans->slength[index[j]];
+            }
+            else
+            {
+                if (i != j)
+                {
+                    pr->gr[(int)floor(sqrt(distance2(x[index[i]], x[index[j]]))/binwidth)] += gsans->slength[index[i]]*gsans->slength[index[j]];
+                }
             }
         }
 #endif
@@ -328,19 +354,26 @@ gmx_radial_distribution_histogram_t *calc_radial_distribution_histogram (
         {
             tid = gmx_omp_get_thread_num();
             /* starting parallel threads */
-            if (bNSE) {
+            if (bNSE)
+            {
                 #pragma omp for
                 /* we already copyed x[index[i]] to gnse->x[frame] */
-                for(i=0;i<isize;i++) {
-                    for(j=0;j<isize;j++) {
-                        tgr[tid][(int)floor(sqrt(distance2(x[i],xf[j]))/binwidth)]+=gsans->slength[index[i]]*gsans->slength[index[j]];
+                for (i = 0; i < isize; i++)
+                {
+                    for (j = 0; j < isize; j++)
+                    {
+                        tgr[tid][(int)floor(sqrt(distance2(x[i], xf[j]))/binwidth)] += gsans->slength[index[i]]*gsans->slength[index[j]];
                     }
                 }
-            } else {
+            }
+            else
+            {
                 #pragma omp for
-                for(i=0;i<isize;i++) {
-                    for(j=0;j<i;j++) {
-                        tgr[tid][(int)floor(sqrt(distance2(x[index[i]],x[index[j]]))/binwidth)]+=gsans->slength[index[i]]*gsans->slength[index[j]];
+                for (i = 0; i < isize; i++)
+                {
+                    for (j = 0; j < i; j++)
+                    {
+                        tgr[tid][(int)floor(sqrt(distance2(x[index[i]], x[index[j]]))/binwidth)] += gsans->slength[index[i]]*gsans->slength[index[j]];
                     }
                 }
             }
@@ -360,26 +393,35 @@ gmx_radial_distribution_histogram_t *calc_radial_distribution_histogram (
         }
         sfree(tgr);
 #else
-        if (bNSE) {
+        if (bNSE)
+        {
             /* we already copyed x[index[i]] to gnse->x[frame] */
-            for(i=0;i<isize;i++) {
-                for(j=0;j<isize;j++) {
-                    pr->gr[(int)floor(sqrt(distance2(x[i],xf[j]))/binwidth)]+=gsans->slength[index[i]]*gsans->slength[index[j]];
+            for (i = 0; i < isize; i++)
+            {
+                for (j = 0; j < isize; j++)
+                {
+                    pr->gr[(int)floor(sqrt(distance2(x[i], xf[j]))/binwidth)] += gsans->slength[index[i]]*gsans->slength[index[j]];
                 }
             }
-        } else {
-            for(i=0;i<isize;i++) {
-                for(j=0;j<i;j++) {
-                    pr->gr[(int)floor(sqrt(distance2(x[index[i]],x[index[j]]))/binwidth)]+=gsans->slength[index[i]]*gsans->slength[index[j]];
+        }
+        else
+        {
+            for (i = 0; i < isize; i++)
+            {
+                for (j = 0; j < i; j++)
+                {
+                    pr->gr[(int)floor(sqrt(distance2(x[index[i]], x[index[j]]))/binwidth)] += gsans->slength[index[i]]*gsans->slength[index[j]];
                 }
             }
         }
 #endif
     }
 
-    snew(pr->r,pr->grn);
-    for(i=0;i<pr->grn;i++)
-        pr->r[i]=(pr->binwidth*i+pr->binwidth*0.5);
+    snew(pr->r, pr->grn);
+    for (i = 0; i < pr->grn; i++)
+    {
+        pr->r[i] = (pr->binwidth*i+pr->binwidth*0.5);
+    }
 
     return (gmx_radial_distribution_histogram_t *) pr;
 }
