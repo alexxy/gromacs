@@ -236,12 +236,17 @@ gmx_radial_distribution_histogram_t *calc_radial_distribution_histogram (
     /* allocate memory for pr */
     snew(pr, 1);
     /* set some fields */
-    pr->binwidth = binwidth;
-
-    if (max_dx(box) - max_dx(boxf) > 0 ) {
+    pr->binwidth=binwidth;
+    if (bNSE) {
+        if (max_dx(box) - max_dx(boxf) > 0 ) {
+            rmax = max_dx(box);
+        } else {
+            rmax = max_dx(boxf);
+        }
+    }
+    else
+    {
         rmax = max_dx(box);
-    } else {
-        rmax = max_dx(boxf);
     }
 
     pr->grn = (int)floor(rmax/pr->binwidth)+1;
