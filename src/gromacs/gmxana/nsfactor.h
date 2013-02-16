@@ -73,22 +73,22 @@ typedef struct gmx_static_structurefactor_t {
 } gmx_static_structurefactor_t;
 
 typedef struct gmx_dynamic_structurefcator_t {
-    int     tn; /*  number of frames */
-    double   q; /*  q for this s(q=const(t)) */
-    double  *s; /*  scattering */
+    int      tn; /*  number of frames */
+    double   q;  /*  q for this s(q=const(t)) */
+    double  *s;  /*  scattering */
 } gmx_dynamic_structurefactor_t;
 
 typedef struct gmx_nse_t {
-    gmx_sans_t                            *sans; /*  scattering params */
-    gmx_radial_distribution_histogram_t   **gr;  /*  array of gr */
-    gmx_static_structurefactor_t           **sq; /*  array of sq */
-    gmx_dynamic_structurefactor_t          **sqt; /*  s(q(t))  array */
-    rvec       **x; /* md coordinates */
-    real        *t; /*  md time */
-    real        *dt; /* time for correlation */
-    matrix      *box; /* box for current coordinates */
-    int        nrframes;
-    int        sqtn;
+    gmx_sans_t                              *sans; /*  scattering params */
+    gmx_radial_distribution_histogram_t    **gr;   /*  array of gr */
+    gmx_static_structurefactor_t           **sq;   /*  array of sq */
+    gmx_dynamic_structurefactor_t          **sqt;  /*  s(q(t))  array */
+    rvec                                   **x;    /* md coordinates */
+    real                                    *t;    /*  md time */
+    real                                    *dt;   /* time for correlation */
+    matrix                                  *box;  /* box for current coordinates */
+    int                                      nrframes;
+    int                                      sqtn;
 } gmx_nse_t;
 
 void check_binwidth(real binwidth);
@@ -106,14 +106,14 @@ gmx_sans_t *gmx_sans_init(t_topology *top, gmx_neutron_atomic_structurefactors_t
 void done_sans(gmx_sans_t *gsans);
 
 gmx_radial_distribution_histogram_t *calc_radial_distribution_histogram  (gmx_sans_t *gsans,
-                            rvec *x, rvec *xf,
-                            matrix box, matrix boxf,
-                            atom_id *index,
-                            int isize,
-                            double binwidth,
-                            gmx_bool bMC, gmx_bool bNSE,
-                            real mcover,
-                            unsigned int seed);
+                                                                          rvec *x, rvec *xf,
+                                                                          matrix box, matrix boxf,
+                                                                          atom_id *index,
+                                                                          int isize,
+                                                                          double binwidth,
+                                                                          gmx_bool bMC, gmx_bool bNSE,
+                                                                          real mcover,
+                                                                          unsigned int seed);
 
 gmx_static_structurefactor_t *convert_histogram_to_intensity_curve (gmx_radial_distribution_histogram_t *pr, double start_q, double end_q, double q_step);
 

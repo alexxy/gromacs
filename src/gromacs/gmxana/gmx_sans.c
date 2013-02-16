@@ -75,13 +75,13 @@ int gmx_sans(int argc, char *argv[])
         "[PAR]",
         "WARNING: If sq or pr specified this tool can produce large number of files! Up to two times larger than number of frames!"
     };
-    static gmx_bool bPBC=TRUE;
-    static gmx_bool bNSE=FALSE;
-    static real binwidth=0.2,grid=0.05; /* bins shouldnt be smaller then smallest bond (~0.1nm) length */
-    static real start_q=0.0, end_q=2.0, q_step=0.01;
-    static real mcover=-1;
-    static unsigned int  seed=0;
-    static int           nthreads=-1;
+    static gmx_bool      bPBC     = TRUE;
+    static gmx_bool      bNSE     = FALSE;
+    static real          binwidth = 0.2, grid = 0.05; /* bins shouldnt be smaller then smallest bond (~0.1nm) length */
+    static real          start_q  = 0.0, end_q = 2.0, q_step = 0.01;
+    static real          mcover   = -1;
+    static unsigned int  seed     = 0;
+    static int           nthreads = -1;
 
     static const char   *emode[]   = { NULL, "direct", "mc", NULL };
     static const char   *emethod[] = { NULL, "debye", "fft", NULL };
@@ -244,90 +244,103 @@ int gmx_sans(int argc, char *argv[])
         fprintf(stderr, "\nWARNING: number of atoms in tpx (%d) and trajectory (%d) do not match\n", natoms, top->atoms.nr);
     }
 
-  do {
-      if (bPBC) {
-          gmx_rmpbc(gpbc,top->atoms.nr,box,x);
-      }
-      /* allocate memory for pr */
-      if (pr == NULL) {
-          /* in case its first frame to read */
-          snew(pr,1);
-      }
-      /*  realy calc p(r) */
-      prframecurrent = calc_radial_distribution_histogram(gsans,x,NULL,box,NULL,index,isize,binwidth,bMC,bNSE,mcover,seed);
-      /* copy prframecurrent -> pr and summ up pr->gr[i] */
-      /* allocate and/or resize memory for pr->gr[i] and pr->r[i] */
-      if (pr->gr == NULL) {
-          /* check if we use pr->gr first time */
-          snew(pr->gr,prframecurrent->grn);
-          snew(pr->r,prframecurrent->grn);
-      } else {
-          /* resize pr->gr and pr->r if needed to preven overruns */
-          if(prframecurrent->grn > pr->grn) {
-              srenew(pr->gr,prframecurrent->grn);
-              srenew(pr->r,prframecurrent->grn);
-          }
-      }
-      pr->grn = prframecurrent->grn;
-      pr->binwidth = prframecurrent->binwidth;
-      /* summ up gr and fill r */
-      for(i=0;i<prframecurrent->grn;i++) {
-          pr->gr[i] += prframecurrent->gr[i];
-          pr->r[i] = prframecurrent->r[i];
-      }
-      /* normalize histo */
-      normalize_probability(prframecurrent->grn,prframecurrent->gr);
-      /* convert p(r) to sq */
-      sqframecurrent = convert_histogram_to_intensity_curve(prframecurrent,start_q,end_q,q_step);
-      /* print frame data if needed */
-      if(opt2fn_null("-prframe",NFILE,fnm)) {
-          snew(hdr,25);
-          snew(suffix,GMX_PATH_MAX);
-          /* prepare header */
-          sprintf(hdr,"g(r), t = %f",t);
-          /* prepare output filename */
-          fnmdup = dup_tfn(NFILE,fnm);
-          sprintf(suffix,"-t%.2f",t);
-          add_suffix_to_output_names(fnmdup,NFILE,suffix);
-          fp = xvgropen(opt2fn_null("-prframe",NFILE,fnmdup),hdr,"Distance (nm)","Probability",oenv);
-          for(i=0;i<prframecurrent->grn;i++) {
-              fprintf(fp,"%10.6f%10.6f\n",prframecurrent->r[i],prframecurrent->gr[i]);
-          }
-          done_filenms(NFILE,fnmdup);
-          fclose(fp);
-          sfree(hdr);
-          sfree(suffix);
-          sfree(fnmdup);
-      }
-      if(opt2fn_null("-sqframe",NFILE,fnm)) {
-          snew(hdr,25);
-          snew(suffix,GMX_PATH_MAX);
-          /* prepare header */
-          sprintf(hdr,"I(q), t = %f",t);
-          /* prepare output filename */
-          fnmdup = dup_tfn(NFILE,fnm);
-          sprintf(suffix,"-t%.2f",t);
-          add_suffix_to_output_names(fnmdup,NFILE,suffix);
-          fp = xvgropen(opt2fn_null("-sqframe",NFILE,fnmdup),hdr,"q (nm^-1)","s(q)/s(0)",oenv);
-          for(i=0;i<sqframecurrent->qn;i++) {
-              fprintf(fp,"%10.6f%10.6f\n",sqframecurrent->q[i],sqframecurrent->s[i]);
-          }
-          done_filenms(NFILE,fnmdup);
-          fclose(fp);
-          sfree(hdr);
-          sfree(suffix);
-          sfree(fnmdup);
-      }
-      /* free pr structure */
-      sfree(prframecurrent->gr);
-      sfree(prframecurrent->r);
-      sfree(prframecurrent);
-      /* free sq structure */
-      sfree(sqframecurrent->q);
-      sfree(sqframecurrent->s);
-      sfree(sqframecurrent);
-  } while (read_next_x(oenv,status,&t,natoms,x,box));
-  close_trj(status);
+    do
+    {
+        if (bPBC)
+        {
+            gmx_rmpbc(gpbc, top->atoms.nr, box, x);
+        }
+        /* allocate memory for pr */
+        if (pr == NULL)
+        {
+            /* in case its first frame to read */
+            snew(pr, 1);
+        }
+        /*  realy calc p(r) */
+        prframecurrent = calc_radial_distribution_histogram(gsans, x, NULL, box, NULL, index, isize, binwidth, bMC, bNSE, mcover, seed);
+        /* copy prframecurrent -> pr and summ up pr->gr[i] */
+        /* allocate and/or resize memory for pr->gr[i] and pr->r[i] */
+        if (pr->gr == NULL)
+        {
+            /* check if we use pr->gr first time */
+            snew(pr->gr, prframecurrent->grn);
+            snew(pr->r, prframecurrent->grn);
+        }
+        else
+        {
+            /* resize pr->gr and pr->r if needed to preven overruns */
+            if (prframecurrent->grn > pr->grn)
+            {
+                srenew(pr->gr, prframecurrent->grn);
+                srenew(pr->r, prframecurrent->grn);
+            }
+        }
+        pr->grn      = prframecurrent->grn;
+        pr->binwidth = prframecurrent->binwidth;
+        /* summ up gr and fill r */
+        for (i = 0; i < prframecurrent->grn; i++)
+        {
+            pr->gr[i] += prframecurrent->gr[i];
+            pr->r[i]   = prframecurrent->r[i];
+        }
+        /* normalize histo */
+        normalize_probability(prframecurrent->grn, prframecurrent->gr);
+        /* convert p(r) to sq */
+        sqframecurrent = convert_histogram_to_intensity_curve(prframecurrent, start_q, end_q, q_step);
+        /* print frame data if needed */
+        if (opt2fn_null("-prframe", NFILE, fnm))
+        {
+            snew(hdr, 25);
+            snew(suffix, GMX_PATH_MAX);
+            /* prepare header */
+            sprintf(hdr, "g(r), t = %f", t);
+            /* prepare output filename */
+            fnmdup = dup_tfn(NFILE, fnm);
+            sprintf(suffix, "-t%.2f", t);
+            add_suffix_to_output_names(fnmdup, NFILE, suffix);
+            fp = xvgropen(opt2fn_null("-prframe", NFILE, fnmdup), hdr, "Distance (nm)", "Probability", oenv);
+            for (i = 0; i < prframecurrent->grn; i++)
+            {
+                fprintf(fp, "%10.6f%10.6f\n", prframecurrent->r[i], prframecurrent->gr[i]);
+            }
+            done_filenms(NFILE, fnmdup);
+            fclose(fp);
+            sfree(hdr);
+            sfree(suffix);
+            sfree(fnmdup);
+        }
+        if (opt2fn_null("-sqframe", NFILE, fnm))
+        {
+            snew(hdr, 25);
+            snew(suffix, GMX_PATH_MAX);
+            /* prepare header */
+            sprintf(hdr, "I(q), t = %f", t);
+            /* prepare output filename */
+            fnmdup = dup_tfn(NFILE, fnm);
+            sprintf(suffix, "-t%.2f", t);
+            add_suffix_to_output_names(fnmdup, NFILE, suffix);
+            fp = xvgropen(opt2fn_null("-sqframe", NFILE, fnmdup), hdr, "q (nm^-1)", "s(q)/s(0)", oenv);
+            for (i = 0; i < sqframecurrent->qn; i++)
+            {
+                fprintf(fp, "%10.6f%10.6f\n", sqframecurrent->q[i], sqframecurrent->s[i]);
+            }
+            done_filenms(NFILE, fnmdup);
+            fclose(fp);
+            sfree(hdr);
+            sfree(suffix);
+            sfree(fnmdup);
+        }
+        /* free pr structure */
+        sfree(prframecurrent->gr);
+        sfree(prframecurrent->r);
+        sfree(prframecurrent);
+        /* free sq structure */
+        sfree(sqframecurrent->q);
+        sfree(sqframecurrent->s);
+        sfree(sqframecurrent);
+    }
+    while (read_next_x(oenv, status, &t, natoms, x, box));
+    close_trj(status);
 
     /* normalize histo */
     normalize_probability(pr->grn, pr->gr);
