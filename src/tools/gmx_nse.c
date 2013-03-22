@@ -74,6 +74,7 @@ int gmx_nse(int argc, char *argv[])
     static real          binwidth   = 0.2, grid = 0.05; /* bins shouldnt be smaller then bond (~0.1nm) length */
     static real          start_q    = 0.01, end_q = 2.0, q_step = 0.01;
     static real          mcover     = -1;
+    static real          tpart      = 0.25;
     static unsigned int  seed       = 0;
     static int           nthreads   = -1;
 
@@ -100,6 +101,8 @@ int gmx_nse(int argc, char *argv[])
           "Normalize I(q,t) output to I(q,t=0)"},
         { "-grid", FALSE, etREAL, {&grid},
           "[HIDDEN]Grid spacing (in nm) for FFTs" },
+        { "-tpart", FALSE, etREAL, {&tpart},
+          "Part of full trajectory time used for correlation"},
         {"-startq", FALSE, etREAL, {&start_q},
          "Starting q (1/nm) "},
         {"-endq", FALSE, etREAL, {&end_q},
@@ -296,13 +299,13 @@ int gmx_nse(int argc, char *argv[])
      * now try to populate avereged over time cross histograms t,t+dt
      * j = dt, frame = i
      */
-    pairs = (int)floor(0.5*gnse->nrframes*(gnse->nrframes+1));
+    pairs = (int)floor(0.5*(int)floor(gnse->nrframes*tpart+1)*((int)floor(gnse->nrframes*tpart+1)+1));
     snew(gnse->dt, gnse->nrframes);
     fprintf(stderr, "Total numer of pairs = %10d\n", pairs);
 
     for (i = 0; i < gnse->nrframes; i++)
     {
-        for (j = 0; j+i < gnse->nrframes; j++)
+        for (j = 0; j+i < (int)floor(gnse->nrframes * tpart + 1); j++)
         {
             if (grc == NULL)
             {
@@ -440,7 +443,7 @@ int gmx_nse(int argc, char *argv[])
         sprintf(suffix, "-q%2.2lf", gnse->sqt[i]->q);
         add_suffix_to_output_names(fnmdup, NFILE, suffix);
         fp = xvgropen(opt2fn("-sqt", NFILE, fnmdup), hdr, "dt", "S(q,dt)", oenv);
-        for (j = 0; j < gnse->nrframes; j++)
+        for (j = 0; j < (int)floor(gnse->nrframes*tpart + 1); j++)
         {
             if (bNORMALIZE)
             {
@@ -460,7 +463,7 @@ int gmx_nse(int argc, char *argv[])
 
     /* Now we need to clean up rest structures */
     sfree(gnse->dt);
-    for (i = 0; i < gnse->nrframes; i++)
+    for (i = 0; i < gnse->sqtn; i++)
     {
         sfree(gnse->sqt[i]->s);
         sfree(gnse->sqt[i]);
