@@ -245,6 +245,8 @@ void registerLegacyModules(gmx::CommandLineModuleManager *manager)
                    "Convert energy files");
     registerModule(manager, &gmx_solvate, "solvate",
                    "Solvate a system");
+    registerModule(manager, &gmx_hpgc, "hpgc",
+		    "Compute helical protein filament geometry");
     registerModule(manager, &gmx_insert_molecules, "insert-molecules",
                    "Insert molecules into existing vacancies");
     registerObsoleteTool(manager, "genbox");
