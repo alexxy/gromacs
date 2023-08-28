@@ -184,11 +184,11 @@ public:
         {
             if (sizeof(result_type) == sizeof(uint32_t))
             {
-                rangeBits = log2I(static_cast<uint32_t>(range));
+                rangeBits = gmx::log2I(static_cast<uint32_t>(range));
             }
             else
             {
-                rangeBits = log2I(range);
+                rangeBits = gmx::log2I(range);
             }
             rangeBits += ((range >> rangeBits) > 0);
         }
