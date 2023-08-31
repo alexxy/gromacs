@@ -182,13 +182,14 @@ public:
         }
         else
         {
-            if (sizeof(result_type) == sizeof(uint32_t))
+            if constexpr (sizeof(result_type) == sizeof(uint32_t))
             {
                 rangeBits = gmx::log2I(static_cast<uint32_t>(range));
             }
             else
             {
-                rangeBits = gmx::log2I(range);
+                static_assert((sizeof(result_type) == sizeof(uint64_t)));
+                rangeBits = gmx::log2I(static_cast<uint64_t>(range));
             }
             rangeBits += ((range >> rangeBits) > 0);
         }
